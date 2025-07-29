@@ -1,1 +1,26 @@
-{ "dependencies": { "ts-poet": "^6.12.0" } }
+{
+	"name": "alchemy-gen",
+	"version": "0.1.0",
+	"description": "A CLI tool that generates Effect Platform HTTP libraries from OpenAPI specification documents",
+	"main": "dist/index.js",
+	"type": "module",
+	"scripts": {
+		"build": "tsc",
+		"typecheck": "tsc --noEmit",
+		"lint": "biome check .",
+		"format": "biome format --write .",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"@effect/cli": "^0.69.0",
+		"@effect/platform": "^0.90.0",
+		"@effect/schema": "^0.75.5",
+		"@types/bun": "^1.2.19",
+		"@types/node": "^24.1.0",
+		"ts-poet": "^6.12.0",
+		"typescript": "^5.8.3"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.1.3"
+	}
+}
