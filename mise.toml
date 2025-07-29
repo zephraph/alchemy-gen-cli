@@ -1,0 +1,6 @@
+[tools]
+bun = "1.2.19"
+
+[env]
+_.path = "node_modules/.bin"
+_.file = ".env"
