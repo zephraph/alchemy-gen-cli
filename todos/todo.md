@@ -1,12 +1,5 @@
 # alchemy-gen Implementation Tasks
 
-## Phase 1: Project Setup
-- [ ] Install core dependencies (@effect/cli, @effect/platform, @effect/schema, ts-poet)
-- [ ] Set up TypeScript configuration with proper Effect support
-- [ ] Create basic project structure (src/, tests/, examples/)
-- [ ] Configure Biome for linting and formatting
-- [ ] Study OpenApiJsonSchema from @effect/platform documentation
-
 ## Phase 2: CLI Framework
 - [ ] Implement main CLI entry point using @effect/cli
 - [ ] Create 'generate' command with options for input/output paths
