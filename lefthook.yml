@@ -1,0 +1,7 @@
+# See: https://lefthook.dev/configuration/
+
+pre-commit:
+  jobs:
+    - name: auto format
+      run: mise run fmt
+      stage_fixed: true
