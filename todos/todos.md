@@ -1,13 +1,6 @@
 # alchemy-gen Implementation Tasks
 
 
-## Phase 4: OpenAPI to HttpApi Transformation
-- [ ] Create transformer from parsed OpenAPI to HttpApi structure
-- [ ] Map OpenAPI paths to HttpApiGroup definitions
-- [ ] Convert operations to HttpApiEndpoint configurations
-- [ ] Transform OpenAPI schemas to Effect Schema definitions
-- [ ] Handle parameter types (query, path, header, cookie)
-- [ ] Map response schemas and status codes
 
 ## Phase 5: Code Generation with ts-poet
 - [ ] Set up ts-poet code builder infrastructure
