@@ -183,9 +183,54 @@ const generateHandler = ({
 
 		yield* Console.log("🚀 Starting alchemy-gen generation...");
 
+		// Parse the OpenAPI specification
+		const { quickParseOpenApiFile } = yield* Effect.promise(
+			() => import("./parser/index.js"),
+		);
+		const { ErrorUtils } = yield* Effect.promise(
+			() => import("./utils/error-types.js"),
+		);
+
+		const parseResult = yield* quickParseOpenApiFile(finalInput as string).pipe(
+			Effect.either,
+		);
+
+		if (parseResult._tag === "Left") {
+			const error = parseResult.left;
+			if (ErrorUtils.isOpenApiError(error)) {
+				yield* Console.log(
+					`❌ OpenAPI parsing failed: ${ErrorUtils.formatError(error)}`,
+				);
+			} else {
+				yield* Console.log(
+					`❌ Unexpected error: ${error instanceof Error ? error.message : String(error)}`,
+				);
+			}
+			return yield* Effect.fail(error);
+		}
+
+		const extractedData = parseResult.right;
+
+		if (finalVerbose) {
+			yield* Console.log("📋 OpenAPI specification parsed successfully");
+			yield* Console.log(
+				`✓ Parsed: ${extractedData.info.title} v${extractedData.info.version}`,
+			);
+			yield* Console.log(`  - Paths: ${extractedData.paths.length}`);
+			yield* Console.log(
+				`  - Operations: ${extractedData.paths.reduce((sum, path) => sum + path.operations.length, 0)}`,
+			);
+			yield* Console.log(
+				`  - Schemas: ${Object.keys(extractedData.components.schemas).length}`,
+			);
+		}
+
 		// TODO: Implement the actual generation logic
 		yield* Console.log(
-			"⚠️  Generation logic not yet implemented - this is a CLI framework placeholder",
+			"⚠️  Code generation not yet implemented - OpenAPI parsing completed successfully",
+		);
+		yield* Console.log(
+			`📊 Parsed API: ${extractedData.info.title} v${extractedData.info.version}`,
 		);
 
 		yield* Console.log("✅ Generation completed successfully!");
