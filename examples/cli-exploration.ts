@@ -1,5 +1,3 @@
-import { Console, Effect } from "effect";
-
 // Simple exploration without complex CLI setup
 console.log("=== Effect CLI Analysis ===");
 
