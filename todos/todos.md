@@ -1,7 +1,6 @@
 # alchemy-gen Implementation Tasks
 
 ## Phase 3: OpenAPI Schema Parser
-- [ ] Create OpenAPI spec reader (support JSON and YAML)
 - [ ] Implement parser using OpenApiJsonSchema from @effect/platform
 - [ ] Alternative: Create custom Effect Schema for OpenAPI spec parsing
 - [ ] Handle OpenAPI 3.x schema validation
