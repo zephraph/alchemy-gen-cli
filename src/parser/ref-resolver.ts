@@ -1,5 +1,6 @@
 import RefParser from "@apidevtools/json-schema-ref-parser";
 import { Effect } from "effect";
+import * as url from "node:url";
 import type { OpenApiDocument } from "../types/openapi.js";
 
 export interface ResolvedDocument {
@@ -12,6 +13,9 @@ export interface RefResolutionOptions {
 	readonly resolveExternal?: boolean;
 	readonly dereferenceInternal?: boolean;
 	readonly continueOnError?: boolean;
+	readonly allowedDomains?: readonly string[];
+	readonly maxRedirects?: number;
+	readonly timeout?: number;
 }
 
 /**
@@ -21,7 +25,63 @@ export const defaultRefResolutionOptions: RefResolutionOptions = {
 	resolveExternal: false, // Only resolve internal references by default
 	dereferenceInternal: true,
 	continueOnError: false,
+	allowedDomains: [], // No external domains allowed by default
+	maxRedirects: 0,
+	timeout: 5000, // 5 second timeout
 } as const;
+
+/**
+ * Validates if a URL is safe for external reference resolution
+ */
+const validateExternalUrl = (
+	refUrl: string,
+	options: RefResolutionOptions
+): Effect.Effect<void, Error> =>
+	Effect.gen(function* () {
+		try {
+			const parsedUrl = new url.URL(refUrl);
+			
+			// Block dangerous protocols
+			if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+				yield* Effect.fail(new Error(`Unsafe protocol '${parsedUrl.protocol}' in reference: ${refUrl}`));
+			}
+			
+			// Block private/local addresses
+			const hostname = parsedUrl.hostname.toLowerCase();
+			if (
+				hostname === 'localhost' ||
+				hostname === '127.0.0.1' ||
+				hostname === '::1' ||
+				hostname.startsWith('192.168.') ||
+				hostname.startsWith('10.') ||
+				hostname.startsWith('172.16.') ||
+				hostname.startsWith('172.17.') ||
+				hostname.startsWith('172.18.') ||
+				hostname.startsWith('172.19.') ||
+				hostname.startsWith('172.2') ||
+				hostname.startsWith('172.30.') ||
+				hostname.startsWith('172.31.') ||
+				hostname.startsWith('169.254.') ||
+				hostname === '0.0.0.0' ||
+				hostname.includes('.local')
+			) {
+				yield* Effect.fail(new Error(`Private/local address not allowed in external reference: ${refUrl}`));
+			}
+			
+			// Check domain whitelist if specified
+			const allowedDomains = options.allowedDomains || [];
+			if (allowedDomains.length > 0) {
+				const isAllowed = allowedDomains.some(domain => 
+					hostname === domain || hostname.endsWith(`.${domain}`)
+				);
+				if (!isAllowed) {
+					yield* Effect.fail(new Error(`Domain '${hostname}' not in allowed domains list. Allowed: ${allowedDomains.join(', ')}`));
+				}
+			}
+		} catch (error) {
+			yield* Effect.fail(new Error(`Invalid URL in external reference: ${refUrl}`));
+		}
+	});
 
 /**
  * Extracts all reference paths from a document
@@ -77,21 +137,51 @@ export const resolveReferences = (
 			},
 		};
 
+		// Validate external references if external resolution is enabled
+		if (options.resolveExternal) {
+			const { external } = classifyReferences(referencePaths);
+			for (const extRef of external) {
+				yield* validateExternalUrl(extRef, options);
+			}
+		}
+
+		// Configure RefParser options with security controls
+		const secureParserOptions = {
+			...parserOptions,
+			resolve: {
+				http: options.resolveExternal ? {
+					timeout: options.timeout || 5000,
+					redirects: options.maxRedirects || 0
+				} : false,
+				https: options.resolveExternal ? {
+					timeout: options.timeout || 5000,
+					redirects: options.maxRedirects || 0
+				} : false,
+				file: false // Disable file system access for security
+			}
+		};
+
 		// Resolve references using RefParser
 		const resolved = yield* Effect.tryPromise({
 			try: async () => {
 				if (options.resolveExternal) {
-					// Resolve all references including external ones
+					// Resolve all references including external ones with security controls
 					return (await RefParser.dereference(
 						document as any,
-						parserOptions,
+						secureParserOptions,
 					)) as OpenApiDocument;
 				} else {
-					// Only resolve internal references by cloning and manually resolving
-					const cloned = JSON.parse(JSON.stringify(document));
-					return (await RefParser.dereference(
-						cloned,
-						parserOptions,
+					// Only resolve internal references - use bundle to avoid external resolution
+					return (await RefParser.bundle(
+						document as any,
+						{
+							...secureParserOptions,
+							resolve: {
+								http: false,
+								https: false,
+								file: false
+							}
+						}
 					)) as OpenApiDocument;
 				}
 			},

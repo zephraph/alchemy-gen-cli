@@ -1,0 +1,39 @@
+openapi: 3.0.0
+info:
+  title: Security Test - External References
+  version: 1.0.0
+  description: OpenAPI spec with external references for security testing
+
+paths:
+  /users:
+    get:
+      summary: Get users with external schema reference
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: 'https://example.com/schemas/user.json'
+
+  /unsafe:
+    get:
+      summary: Endpoint with unsafe external reference
+      responses:  
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: 'http://localhost:3000/malicious-schema.json'
+
+  /file-ref:
+    get:
+      summary: Endpoint with file reference (should be blocked)
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: 'file:///etc/passwd'
