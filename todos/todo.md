@@ -1,12 +1,5 @@
 # alchemy-gen Implementation Tasks
 
-## Phase 2: CLI Framework
-- [ ] Implement main CLI entry point using @effect/cli
-- [ ] Create 'generate' command with options for input/output paths
-- [ ] Add validation for CLI arguments
-- [ ] Implement help documentation
-- [ ] Add configuration file support (.alchemyrc)
-
 ## Phase 3: OpenAPI Schema Parser
 - [ ] Create OpenAPI spec reader (support JSON and YAML)
 - [ ] Implement parser using OpenApiJsonSchema from @effect/platform
