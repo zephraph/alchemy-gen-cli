@@ -6,6 +6,7 @@
 - [ ] Handle OpenAPI 3.x schema validation
 - [ ] Extract paths, operations, and components from parsed schema
 - [ ] Handle references ($ref resolution) within the schema
+- [ ] Add appropriate tests to verify newly added behavior
 
 ## Phase 4: OpenAPI to HttpApi Transformation
 - [ ] Create transformer from parsed OpenAPI to HttpApi structure
