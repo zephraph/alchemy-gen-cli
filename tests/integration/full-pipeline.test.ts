@@ -1,10 +1,7 @@
 import { describe, expect, it } from "bun:test";
-import { Effect, Layer } from "effect";
-import { FileSystem } from "@effect/platform";
 import { NodeFileSystem } from "@effect/platform-node";
+import { Effect, Either } from "effect";
 import { parseOpenApiSpec } from "../../src/parser/index.js";
-
-const TestLayer = Layer.merge(NodeFileSystem.layer);
 
 describe("Full OpenAPI Parser Pipeline", () => {
 	describe("parseOpenApiSpec integration", () => {
@@ -16,7 +13,7 @@ describe("Full OpenAPI Parser Pipeline", () => {
 			// 		Effect.either
 			// 	)
 			// );
-			// 
+			//
 			// expect(Effect.isRight(result)).toBe(true);
 			// if (Effect.isRight(result)) {
 			// 	const parsedData = result.right;
@@ -50,13 +47,13 @@ describe("Full OpenAPI Parser Pipeline", () => {
 		it("should propagate file reading errors", async () => {
 			const result = await Effect.runPromise(
 				parseOpenApiSpec("/nonexistent/file.yaml").pipe(
-					Effect.provide(TestLayer),
-					Effect.either
-				)
+					Effect.provide(NodeFileSystem.layer),
+					Effect.either,
+				),
 			);
 
-			expect(Effect.isLeft(result)).toBe(true);
-			if (Effect.isLeft(result)) {
+			expect(Either.isLeft(result)).toBe(true);
+			if (Either.isLeft(result)) {
 				expect(result.left.message).toContain("does not exist");
 			}
 		});

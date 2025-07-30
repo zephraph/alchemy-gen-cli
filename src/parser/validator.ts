@@ -37,7 +37,7 @@ const formatParseErrors = (
 /**
  * Validates OpenAPI version compatibility
  */
-const validateOpenApiVersion = (
+export const validateOpenApiVersion = (
 	document: unknown,
 ): Effect.Effect<void, ValidationError> =>
 	Effect.gen(function* () {
@@ -111,6 +111,15 @@ const validateBasicStructure = (
 				path: "info.version",
 				message: "Missing or invalid 'version' in info object",
 				value: info.version,
+			});
+		}
+
+		// Check for required paths field
+		if (!doc.paths || typeof doc.paths !== "object") {
+			yield* Effect.fail({
+				path: "paths",
+				message: "Missing or invalid 'paths' object",
+				value: doc.paths,
 			});
 		}
 	});

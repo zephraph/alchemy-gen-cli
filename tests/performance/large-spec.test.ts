@@ -1,5 +1,4 @@
-import { describe, expect, it } from "bun:test";
-import { Effect } from "effect";
+import { describe, it } from "bun:test";
 
 describe("Performance Tests", () => {
 	describe("large OpenAPI specifications", () => {
@@ -11,7 +10,7 @@ describe("Performance Tests", () => {
 			// );
 			// const endTime = performance.now();
 			// const duration = endTime - startTime;
-			// 
+			//
 			// expect(Effect.isRight(result)).toBe(true);
 			// expect(duration).toBeLessThan(5000); // Should complete within 5 seconds
 		});

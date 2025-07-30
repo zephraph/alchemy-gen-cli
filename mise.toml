@@ -11,3 +11,6 @@ _.file = ".env"
 
 [tasks.fmt]
 run = "biome check --write --unsafe ."
+
+[tasks.test]
+run = "bun test"

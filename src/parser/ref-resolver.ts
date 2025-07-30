@@ -1,6 +1,6 @@
+import * as url from "node:url";
 import RefParser from "@apidevtools/json-schema-ref-parser";
 import { Effect } from "effect";
-import * as url from "node:url";
 import type { OpenApiDocument } from "../types/openapi.js";
 
 export interface ResolvedDocument {
@@ -35,51 +35,65 @@ export const defaultRefResolutionOptions: RefResolutionOptions = {
  */
 const validateExternalUrl = (
 	refUrl: string,
-	options: RefResolutionOptions
+	options: RefResolutionOptions,
 ): Effect.Effect<void, Error> =>
 	Effect.gen(function* () {
 		try {
 			const parsedUrl = new url.URL(refUrl);
-			
+
 			// Block dangerous protocols
-			if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-				yield* Effect.fail(new Error(`Unsafe protocol '${parsedUrl.protocol}' in reference: ${refUrl}`));
+			if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+				yield* Effect.fail(
+					new Error(
+						`Unsafe protocol '${parsedUrl.protocol}' in reference: ${refUrl}`,
+					),
+				);
 			}
-			
+
 			// Block private/local addresses
 			const hostname = parsedUrl.hostname.toLowerCase();
 			if (
-				hostname === 'localhost' ||
-				hostname === '127.0.0.1' ||
-				hostname === '::1' ||
-				hostname.startsWith('192.168.') ||
-				hostname.startsWith('10.') ||
-				hostname.startsWith('172.16.') ||
-				hostname.startsWith('172.17.') ||
-				hostname.startsWith('172.18.') ||
-				hostname.startsWith('172.19.') ||
-				hostname.startsWith('172.2') ||
-				hostname.startsWith('172.30.') ||
-				hostname.startsWith('172.31.') ||
-				hostname.startsWith('169.254.') ||
-				hostname === '0.0.0.0' ||
-				hostname.includes('.local')
+				hostname === "localhost" ||
+				hostname === "127.0.0.1" ||
+				hostname === "::1" ||
+				hostname.startsWith("192.168.") ||
+				hostname.startsWith("10.") ||
+				hostname.startsWith("172.16.") ||
+				hostname.startsWith("172.17.") ||
+				hostname.startsWith("172.18.") ||
+				hostname.startsWith("172.19.") ||
+				hostname.startsWith("172.2") ||
+				hostname.startsWith("172.30.") ||
+				hostname.startsWith("172.31.") ||
+				hostname.startsWith("169.254.") ||
+				hostname === "0.0.0.0" ||
+				hostname.includes(".local")
 			) {
-				yield* Effect.fail(new Error(`Private/local address not allowed in external reference: ${refUrl}`));
+				yield* Effect.fail(
+					new Error(
+						`Private/local address not allowed in external reference: ${refUrl}`,
+					),
+				);
 			}
-			
+
 			// Check domain whitelist if specified
 			const allowedDomains = options.allowedDomains || [];
 			if (allowedDomains.length > 0) {
-				const isAllowed = allowedDomains.some(domain => 
-					hostname === domain || hostname.endsWith(`.${domain}`)
+				const isAllowed = allowedDomains.some(
+					(domain) => hostname === domain || hostname.endsWith(`.${domain}`),
 				);
 				if (!isAllowed) {
-					yield* Effect.fail(new Error(`Domain '${hostname}' not in allowed domains list. Allowed: ${allowedDomains.join(', ')}`));
+					yield* Effect.fail(
+						new Error(
+							`Domain '${hostname}' not in allowed domains list. Allowed: ${allowedDomains.join(", ")}`,
+						),
+					);
 				}
 			}
-		} catch (error) {
-			yield* Effect.fail(new Error(`Invalid URL in external reference: ${refUrl}`));
+		} catch (_error) {
+			yield* Effect.fail(
+				new Error(`Invalid URL in external reference: ${refUrl}`),
+			);
 		}
 	});
 
@@ -131,7 +145,7 @@ export const resolveReferences = (
 
 		// Configure RefParser options
 		const parserOptions = {
-			continueOnError: options.continueOnError || false,
+			continueOnError: options.continueOnError || !options.resolveExternal, // Continue on error when external resolution is disabled
 			dereference: {
 				circular: "ignore" as const,
 			},
@@ -149,47 +163,59 @@ export const resolveReferences = (
 		const secureParserOptions = {
 			...parserOptions,
 			resolve: {
-				http: options.resolveExternal ? {
-					timeout: options.timeout || 5000,
-					redirects: options.maxRedirects || 0
-				} : false,
-				https: options.resolveExternal ? {
-					timeout: options.timeout || 5000,
-					redirects: options.maxRedirects || 0
-				} : false,
-				file: false // Disable file system access for security
-			}
+				http: options.resolveExternal
+					? {
+							timeout: options.timeout || 5000,
+							redirects: options.maxRedirects || 0,
+						}
+					: false,
+				https: options.resolveExternal
+					? {
+							timeout: options.timeout || 5000,
+							redirects: options.maxRedirects || 0,
+						}
+					: false,
+				file: false, // Disable file system access for security
+			},
 		};
 
-		// Resolve references using RefParser
-		const resolved = yield* Effect.tryPromise({
-			try: async () => {
-				if (options.resolveExternal) {
-					// Resolve all references including external ones with security controls
-					return (await RefParser.dereference(
-						document as any,
-						secureParserOptions,
-					)) as OpenApiDocument;
-				} else {
-					// Only resolve internal references - use bundle to avoid external resolution
-					return (await RefParser.bundle(
-						document as any,
-						{
-							...secureParserOptions,
-							resolve: {
-								http: false,
-								https: false,
-								file: false
-							}
-						}
-					)) as OpenApiDocument;
-				}
-			},
-			catch: (error) => {
-				const message = error instanceof Error ? error.message : String(error);
-				return new Error(`Failed to resolve references: ${message}`);
-			},
-		});
+		// Check if we have external references and external resolution is disabled
+		const { external } = classifyReferences(referencePaths);
+		const hasExternalRefs = external.length > 0;
+
+		let resolved: OpenApiDocument;
+
+		if (!options.resolveExternal && hasExternalRefs) {
+			// If external resolution is disabled and we have external refs,
+			// return the original document with external refs intact
+			resolved = document;
+		} else {
+			// Resolve references using RefParser
+			resolved = yield* Effect.tryPromise({
+				try: async () => {
+					if (options.resolveExternal) {
+						// Resolve all references including external ones with security controls
+						return (await RefParser.dereference(
+							// biome-ignore lint/suspicious/noExplicitAny: RefParser expects unknown document type, safe cast
+							document as any,
+							secureParserOptions,
+						)) as OpenApiDocument;
+					} else {
+						// Only resolve internal references
+						return (await RefParser.bundle(
+							// biome-ignore lint/suspicious/noExplicitAny: RefParser expects unknown document type, safe cast
+							document as any,
+							secureParserOptions,
+						)) as OpenApiDocument;
+					}
+				},
+				catch: (error) => {
+					const message =
+						error instanceof Error ? error.message : String(error);
+					return new Error(`Failed to resolve references: ${message}`);
+				},
+			});
+		}
 
 		return {
 			original: document,

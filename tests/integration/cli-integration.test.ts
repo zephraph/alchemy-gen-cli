@@ -1,5 +1,4 @@
-import { describe, expect, it } from "bun:test";
-import { Effect } from "effect";
+import { describe, it } from "bun:test";
 
 describe("CLI Integration", () => {
 	describe("command line interface", () => {

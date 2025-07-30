@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { Effect } from "effect";
+import { Effect, Either } from "effect";
 import { extractApiData } from "../../../src/parser/extractor.js";
 import type { OpenApiDocument } from "../../../src/types/openapi.js";
 
@@ -9,7 +9,7 @@ describe("Data Extractor", () => {
 		info: {
 			title: "Test API",
 			version: "1.0.0",
-			description: "A test API"
+			description: "A test API",
 		},
 		paths: {
 			"/users": {
@@ -23,12 +23,12 @@ describe("Data Extractor", () => {
 								"application/json": {
 									schema: {
 										type: "array",
-										items: { $ref: "#/components/schemas/User" }
-									}
-								}
-							}
-						}
-					}
+										items: { $ref: "#/components/schemas/User" },
+									},
+								},
+							},
+						},
+					},
 				},
 				post: {
 					summary: "Create a user",
@@ -37,21 +37,21 @@ describe("Data Extractor", () => {
 						required: true,
 						content: {
 							"application/json": {
-								schema: { $ref: "#/components/schemas/CreateUser" }
-							}
-						}
+								schema: { $ref: "#/components/schemas/CreateUser" },
+							},
+						},
 					},
 					responses: {
 						"201": {
 							description: "Created",
 							content: {
 								"application/json": {
-									schema: { $ref: "#/components/schemas/User" }
-								}
-							}
-						}
-					}
-				}
+									schema: { $ref: "#/components/schemas/User" },
+								},
+							},
+						},
+					},
+				},
 			},
 			"/users/{id}": {
 				get: {
@@ -62,24 +62,24 @@ describe("Data Extractor", () => {
 							name: "id",
 							in: "path",
 							required: true,
-							schema: { type: "string" }
-						}
+							schema: { type: "string" },
+						},
 					],
 					responses: {
 						"200": {
 							description: "Success",
 							content: {
 								"application/json": {
-									schema: { $ref: "#/components/schemas/User" }
-								}
-							}
+									schema: { $ref: "#/components/schemas/User" },
+								},
+							},
 						},
 						"404": {
-							description: "Not found"
-						}
-					}
-				}
-			}
+							description: "Not found",
+						},
+					},
+				},
+			},
 		},
 		components: {
 			schemas: {
@@ -89,29 +89,29 @@ describe("Data Extractor", () => {
 					properties: {
 						id: { type: "string" },
 						name: { type: "string" },
-						email: { type: "string", format: "email" }
-					}
+						email: { type: "string", format: "email" },
+					},
 				},
 				CreateUser: {
 					type: "object",
 					required: ["name"],
 					properties: {
 						name: { type: "string" },
-						email: { type: "string", format: "email" }
-					}
-				}
-			}
-		}
+						email: { type: "string", format: "email" },
+					},
+				},
+			},
+		},
 	};
 
 	describe("extractApiData", () => {
 		it("should extract basic API information", async () => {
 			const result = await Effect.runPromise(
-				extractApiData(mockOpenApiDoc).pipe(Effect.either)
+				extractApiData(mockOpenApiDoc).pipe(Effect.either),
 			);
 
-			expect(Effect.isRight(result)).toBe(true);
-			if (Effect.isRight(result)) {
+			expect(Either.isRight(result)).toBe(true);
+			if (Either.isRight(result)) {
 				const apiData = result.right;
 				expect(apiData.info.title).toBe("Test API");
 				expect(apiData.info.version).toBe("1.0.0");
@@ -121,19 +121,21 @@ describe("Data Extractor", () => {
 
 		it("should extract all paths and operations", async () => {
 			const result = await Effect.runPromise(
-				extractApiData(mockOpenApiDoc).pipe(Effect.either)
+				extractApiData(mockOpenApiDoc).pipe(Effect.either),
 			);
 
-			expect(Effect.isRight(result)).toBe(true);
-			if (Effect.isRight(result)) {
+			expect(Either.isRight(result)).toBe(true);
+			if (Either.isRight(result)) {
 				const apiData = result.right;
 				expect(apiData.paths).toHaveLength(2);
-				
-				const usersPath = apiData.paths.find(p => p.path === "/users");
+
+				const usersPath = apiData.paths.find((p) => p.path === "/users");
 				expect(usersPath).toBeDefined();
 				expect(usersPath?.operations).toHaveLength(2);
-				
-				const userByIdPath = apiData.paths.find(p => p.path === "/users/{id}");
+
+				const userByIdPath = apiData.paths.find(
+					(p) => p.path === "/users/{id}",
+				);
 				expect(userByIdPath).toBeDefined();
 				expect(userByIdPath?.operations).toHaveLength(1);
 			}
@@ -141,15 +143,17 @@ describe("Data Extractor", () => {
 
 		it("should extract operation details correctly", async () => {
 			const result = await Effect.runPromise(
-				extractApiData(mockOpenApiDoc).pipe(Effect.either)
+				extractApiData(mockOpenApiDoc).pipe(Effect.either),
 			);
 
-			expect(Effect.isRight(result)).toBe(true);
-			if (Effect.isRight(result)) {
+			expect(Either.isRight(result)).toBe(true);
+			if (Either.isRight(result)) {
 				const apiData = result.right;
-				const usersPath = apiData.paths.find(p => p.path === "/users");
-				const getOperation = usersPath?.operations.find(op => op.method === "GET");
-				
+				const usersPath = apiData.paths.find((p) => p.path === "/users");
+				const getOperation = usersPath?.operations.find(
+					(op) => op.method === "GET",
+				);
+
 				expect(getOperation).toBeDefined();
 				expect(getOperation?.operationId).toBe("getUsers");
 				expect(getOperation?.summary).toBe("Get all users");
@@ -158,15 +162,19 @@ describe("Data Extractor", () => {
 
 		it("should extract path parameters", async () => {
 			const result = await Effect.runPromise(
-				extractApiData(mockOpenApiDoc).pipe(Effect.either)
+				extractApiData(mockOpenApiDoc).pipe(Effect.either),
 			);
 
-			expect(Effect.isRight(result)).toBe(true);
-			if (Effect.isRight(result)) {
+			expect(Either.isRight(result)).toBe(true);
+			if (Either.isRight(result)) {
 				const apiData = result.right;
-				const userByIdPath = apiData.paths.find(p => p.path === "/users/{id}");
-				const getOperation = userByIdPath?.operations.find(op => op.method === "GET");
-				
+				const userByIdPath = apiData.paths.find(
+					(p) => p.path === "/users/{id}",
+				);
+				const getOperation = userByIdPath?.operations.find(
+					(op) => op.method === "GET",
+				);
+
 				expect(getOperation?.parameters).toHaveLength(1);
 				expect(getOperation?.parameters[0].name).toBe("id");
 				expect(getOperation?.parameters[0].in).toBe("path");
@@ -176,15 +184,17 @@ describe("Data Extractor", () => {
 
 		it("should extract request body information", async () => {
 			const result = await Effect.runPromise(
-				extractApiData(mockOpenApiDoc).pipe(Effect.either)
+				extractApiData(mockOpenApiDoc).pipe(Effect.either),
 			);
 
-			expect(Effect.isRight(result)).toBe(true);
-			if (Effect.isRight(result)) {
+			expect(Either.isRight(result)).toBe(true);
+			if (Either.isRight(result)) {
 				const apiData = result.right;
-				const usersPath = apiData.paths.find(p => p.path === "/users");
-				const postOperation = usersPath?.operations.find(op => op.method === "POST");
-				
+				const usersPath = apiData.paths.find((p) => p.path === "/users");
+				const postOperation = usersPath?.operations.find(
+					(op) => op.method === "POST",
+				);
+
 				expect(postOperation?.requestBody).toBeDefined();
 				expect(postOperation?.requestBody?.required).toBe(true);
 			}
@@ -192,31 +202,37 @@ describe("Data Extractor", () => {
 
 		it("should extract response information", async () => {
 			const result = await Effect.runPromise(
-				extractApiData(mockOpenApiDoc).pipe(Effect.either)
+				extractApiData(mockOpenApiDoc).pipe(Effect.either),
 			);
 
-			expect(Effect.isRight(result)).toBe(true);
-			if (Effect.isRight(result)) {
+			expect(Either.isRight(result)).toBe(true);
+			if (Either.isRight(result)) {
 				const apiData = result.right;
-				const usersPath = apiData.paths.find(p => p.path === "/users");
-				const getOperation = usersPath?.operations.find(op => op.method === "GET");
-				
+				const usersPath = apiData.paths.find((p) => p.path === "/users");
+				const getOperation = usersPath?.operations.find(
+					(op) => op.method === "GET",
+				);
+
 				expect(getOperation?.responses).toBeDefined();
-				expect(Object.keys(getOperation?.responses || {})).toContain("200");
+				expect(
+					getOperation?.responses.find((r) => r.statusCode === "200"),
+				).toBeDefined();
 			}
 		});
 
 		it("should extract component schemas", async () => {
 			const result = await Effect.runPromise(
-				extractApiData(mockOpenApiDoc).pipe(Effect.either)
+				extractApiData(mockOpenApiDoc).pipe(Effect.either),
 			);
 
-			expect(Effect.isRight(result)).toBe(true);
-			if (Effect.isRight(result)) {
+			expect(Either.isRight(result)).toBe(true);
+			if (Either.isRight(result)) {
 				const apiData = result.right;
-				expect(apiData.schemas).toBeDefined();
-				expect(Object.keys(apiData.schemas || {})).toContain("User");
-				expect(Object.keys(apiData.schemas || {})).toContain("CreateUser");
+				expect(apiData.components.schemas).toBeDefined();
+				expect(Object.keys(apiData.components.schemas || {})).toContain("User");
+				expect(Object.keys(apiData.components.schemas || {})).toContain(
+					"CreateUser",
+				);
 			}
 		});
 
@@ -229,22 +245,22 @@ describe("Data Extractor", () => {
 						get: {
 							summary: "Health check",
 							responses: {
-								"200": { description: "OK" }
-							}
-						}
-					}
-				}
+								"200": { description: "OK" },
+							},
+						},
+					},
+				},
 			};
 
 			const result = await Effect.runPromise(
-				extractApiData(docWithoutComponents).pipe(Effect.either)
+				extractApiData(docWithoutComponents).pipe(Effect.either),
 			);
 
-			expect(Effect.isRight(result)).toBe(true);
-			if (Effect.isRight(result)) {
+			expect(Either.isRight(result)).toBe(true);
+			if (Either.isRight(result)) {
 				const apiData = result.right;
 				expect(apiData.paths).toHaveLength(1);
-				expect(apiData.schemas).toEqual({});
+				expect(apiData.components.schemas).toEqual({});
 			}
 		});
 
@@ -252,15 +268,15 @@ describe("Data Extractor", () => {
 			const docWithEmptyPaths: OpenApiDocument = {
 				openapi: "3.0.0",
 				info: { title: "Empty API", version: "1.0.0" },
-				paths: {}
+				paths: {},
 			};
 
 			const result = await Effect.runPromise(
-				extractApiData(docWithEmptyPaths).pipe(Effect.either)
+				extractApiData(docWithEmptyPaths).pipe(Effect.either),
 			);
 
-			expect(Effect.isRight(result)).toBe(true);
-			if (Effect.isRight(result)) {
+			expect(Either.isRight(result)).toBe(true);
+			if (Either.isRight(result)) {
 				const apiData = result.right;
 				expect(apiData.paths).toHaveLength(0);
 			}

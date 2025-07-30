@@ -1,11 +1,11 @@
 import { describe, expect, it } from "bun:test";
-import { Effect, Layer } from "effect";
-import { FileSystem } from "@effect/platform";
 import { NodeFileSystem } from "@effect/platform-node";
+import { Effect, Either } from "effect";
 import * as yaml from "js-yaml";
-import { readOpenApiFile, readAndValidateOpenApiFile, isValidObjectContent } from "../../../src/parser/reader.js";
-
-const TestLayer = Layer.merge(NodeFileSystem.layer);
+import {
+	isValidObjectContent,
+	readOpenApiFile,
+} from "../../../src/parser/reader.js";
 
 describe("OpenAPI File Reader", () => {
 	describe("readOpenApiFile", () => {
@@ -20,11 +20,11 @@ describe("OpenAPI File Reader", () => {
 		it("should fail for non-existent files", async () => {
 			const result = await Effect.runPromise(
 				readOpenApiFile("/path/to/nonexistent.json").pipe(
-					Effect.provide(TestLayer),
-					Effect.either
-				)
+					Effect.provide(NodeFileSystem.layer),
+					Effect.either,
+				),
 			);
-			expect(Effect.isLeft(result)).toBe(true);
+			expect(Either.isLeft(result)).toBe(true);
 		});
 
 		it("should fail for unsupported file formats", async () => {
@@ -41,7 +41,9 @@ paths: !!js/function >
   function() { console.log("PWNED!"); }
 `;
 			// This should not execute the function due to SAFE_SCHEMA
-			expect(() => yaml.load(maliciousYaml, { schema: yaml.SAFE_SCHEMA })).toThrow();
+			expect(() =>
+				yaml.load(maliciousYaml, { schema: yaml.SAFE_SCHEMA }),
+			).toThrow();
 		});
 	});
 

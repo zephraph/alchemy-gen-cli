@@ -1,13 +1,11 @@
 import { describe, expect, it } from "bun:test";
-import { Effect } from "effect";
-import { 
-	resolveReferences, 
-	resolveInternalReferences, 
-	resolveAllReferences,
+import { Effect, Either } from "effect";
+import {
 	classifyReferences,
-	isInternalReference,
+	defaultRefResolutionOptions,
 	isExternalReference,
-	defaultRefResolutionOptions
+	isInternalReference,
+	resolveReferences,
 } from "../../../src/parser/ref-resolver.js";
 import type { OpenApiDocument } from "../../../src/types/openapi.js";
 
@@ -22,11 +20,11 @@ describe("Reference Resolver", () => {
 					type: "object",
 					properties: {
 						id: { type: "string" },
-						name: { type: "string" }
-					}
-				}
-			}
-		}
+						name: { type: "string" },
+					},
+				},
+			},
+		},
 	};
 
 	describe("reference classification", () => {
@@ -46,17 +44,17 @@ describe("Reference Resolver", () => {
 				"#/components/schemas/User",
 				"https://example.com/schema.json",
 				"#/paths/users",
-				"./common.yaml"
+				"./common.yaml",
 			];
 			const classified = classifyReferences(refs);
-			
+
 			expect(classified.internal).toEqual([
 				"#/components/schemas/User",
-				"#/paths/users"
+				"#/paths/users",
 			]);
 			expect(classified.external).toEqual([
 				"https://example.com/schema.json",
-				"./common.yaml"
+				"./common.yaml",
 			]);
 		});
 	});
@@ -73,22 +71,22 @@ describe("Reference Resolver", () => {
 									description: "Success",
 									content: {
 										"application/json": {
-											schema: { $ref: "https://example.com/user-schema.json" }
-										}
-									}
-								}
-							}
-						}
-					}
-				}
+											schema: { $ref: "https://example.com/user-schema.json" },
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 			};
 
 			const result = await Effect.runPromise(
-				resolveReferences(docWithExternalRef).pipe(Effect.either)
+				resolveReferences(docWithExternalRef).pipe(Effect.either),
 			);
-			
+
 			// Should succeed since external resolution is disabled by default
-			expect(Effect.isRight(result)).toBe(true);
+			expect(Either.isRight(result)).toBe(true);
 		});
 
 		it("should validate external URLs when external resolution is enabled", async () => {
@@ -102,29 +100,29 @@ describe("Reference Resolver", () => {
 									description: "Success",
 									content: {
 										"application/json": {
-											schema: { $ref: "http://localhost:3000/schema.json" }
-										}
-									}
-								}
-							}
-						}
-					}
-				}
+											schema: { $ref: "http://localhost:3000/schema.json" },
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 			};
 
 			const result = await Effect.runPromise(
-				resolveReferences(docWithUnsafeRef, { 
+				resolveReferences(docWithUnsafeRef, {
 					...defaultRefResolutionOptions,
-					resolveExternal: true 
-				}).pipe(Effect.either)
+					resolveExternal: true,
+				}).pipe(Effect.either),
 			);
-			
+
 			// Should fail due to localhost being blocked
-			expect(Effect.isLeft(result)).toBe(true);
+			expect(Either.isLeft(result)).toBe(true);
 		});
 
 		it("should allow whitelisted domains for external references", async () => {
-			const docWithExternalRef: OpenApiDocument = {
+			const _docWithExternalRef: OpenApiDocument = {
 				...mockOpenApiDoc,
 				paths: {
 					"/users": {
@@ -134,14 +132,14 @@ describe("Reference Resolver", () => {
 									description: "Success",
 									content: {
 										"application/json": {
-											schema: { $ref: "https://api.example.com/schema.json" }
-										}
-									}
-								}
-							}
-						}
-					}
-				}
+											schema: { $ref: "https://api.example.com/schema.json" },
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 			};
 
 			// This would need to be tested with actual network access or mocked
@@ -149,9 +147,9 @@ describe("Reference Resolver", () => {
 			const options = {
 				...defaultRefResolutionOptions,
 				resolveExternal: true,
-				allowedDomains: ["api.example.com"]
+				allowedDomains: ["api.example.com"],
 			};
-			
+
 			expect(options.allowedDomains).toContain("api.example.com");
 		});
 
@@ -166,25 +164,25 @@ describe("Reference Resolver", () => {
 									description: "Success",
 									content: {
 										"application/json": {
-											schema: { $ref: "file:///etc/passwd" }
-										}
-									}
-								}
-							}
-						}
-					}
-				}
+											schema: { $ref: "file:///etc/passwd" },
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 			};
 
 			const result = await Effect.runPromise(
-				resolveReferences(docWithFileRef, { 
+				resolveReferences(docWithFileRef, {
 					...defaultRefResolutionOptions,
-					resolveExternal: true 
-				}).pipe(Effect.either)
+					resolveExternal: true,
+				}).pipe(Effect.either),
 			);
-			
+
 			// Should fail due to file:// protocol being blocked
-			expect(Effect.isLeft(result)).toBe(true);
+			expect(Either.isLeft(result)).toBe(true);
 		});
 	});
 

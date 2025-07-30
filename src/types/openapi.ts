@@ -75,6 +75,7 @@ export const XmlSchema = Schema.Struct({
 });
 
 // Forward declarations for recursive schemas
+// biome-ignore lint/suspicious/noExplicitAny: Required for recursive schema type definition with Schema.suspend
 export const SchemaSchema: Schema.Schema<any, any, never> = Schema.suspend(() =>
 	Schema.Struct({
 		title: Schema.optional(Schema.String),
@@ -137,6 +138,7 @@ export const ExampleSchema = Schema.Struct({
 });
 
 // Forward declaration for HeaderSchema
+// biome-ignore lint/suspicious/noExplicitAny: Required for recursive schema type definition with Schema.suspend
 export const HeaderSchema: Schema.Schema<any, any, never> = Schema.suspend(() =>
 	Schema.Struct({
 		description: Schema.optional(Schema.String),
@@ -259,6 +261,7 @@ export const ResponsesSchema = Schema.Record({
 });
 
 // Forward declaration for PathItemSchema
+// biome-ignore lint/suspicious/noExplicitAny: Required for recursive schema type definition with Schema.suspend
 export const PathItemSchema: Schema.Schema<any, any, never> = Schema.suspend(
 	() =>
 		Schema.Struct({
@@ -293,6 +296,7 @@ export const SecurityRequirementSchema = Schema.Record({
 });
 
 // Operation Schema
+// biome-ignore lint/suspicious/noExplicitAny: Required for recursive schema type definition with Schema.suspend
 export const OperationSchema: Schema.Schema<any, any, never> = Schema.suspend(
 	() =>
 		Schema.Struct({

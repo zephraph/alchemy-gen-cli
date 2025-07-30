@@ -342,6 +342,9 @@ export const quickParseOpenApiFile = (
 		return result.extractedData;
 	});
 
+// Alias for backward compatibility
+export const parseOpenApiSpec = parseOpenApiFile;
+
 // Re-export key types and functions for convenience
 export type { OpenApiDocument } from "../types/openapi.js";
 export type { ExtractedApiData } from "./extractor.js";
