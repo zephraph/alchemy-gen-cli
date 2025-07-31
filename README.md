@@ -1,10 +1,10 @@
-# alchemy-gen
+# effect-gen-api
 
 A CLI tool that generates Effect Platform HTTP libraries from OpenAPI specification documents.
 
 ## Overview
 
-alchemy-gen is a code generation tool that transforms OpenAPI specification files into Effect Platform `HttpApi` implementations. It uses `@effect/platform`'s `OpenApiJsonSchema` utilities or custom Effect Schema parsers to process OpenAPI specs, then leverages `ts-poet` for TypeScript code generation and `@effect/cli` for the command-line interface.
+effect-gen is a code generation tool that transforms OpenAPI specification files into Effect Platform `HttpApi` implementations. It uses `@effect/platform`'s `OpenApiJsonSchema` utilities or custom Effect Schema parsers to process OpenAPI specs, then leverages `ts-poet` for TypeScript code generation and `@effect/cli` for the command-line interface.
 
 ## Features
 
@@ -18,13 +18,13 @@ alchemy-gen is a code generation tool that transforms OpenAPI specification file
 ## Installation
 
 ```bash
-bun install alchemy-gen
+bun install effect-gen
 ```
 
 ## Usage
 
 ```bash
-alchemy-gen generate --input openapi.yaml --output ./generated
+effect-gen generate --input openapi.yaml --output ./generated
 ```
 
 ## Tech Stack

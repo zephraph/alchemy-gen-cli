@@ -7,22 +7,22 @@ import { Schema } from "@effect/schema";
 import { Console, Effect, Either, Option as O } from "effect";
 
 // Configuration file schema
-const AlchemyConfigSchema = Schema.Struct({
+const EffectGenConfigSchema = Schema.Struct({
 	input: Schema.optional(Schema.String),
 	output: Schema.optional(Schema.String),
 	verbose: Schema.optional(Schema.Boolean),
 });
 
-type AlchemyConfig = Schema.Schema.Type<typeof AlchemyConfigSchema>;
+type EffectGenConfig = Schema.Schema.Type<typeof EffectGenConfigSchema>;
 
-// Load configuration from .alchemyrc file
+// Load configuration from .effect-gen.rc file
 const loadConfig = Effect.gen(function* () {
 	const fs = yield* FileSystem.FileSystem;
 
-	// Try to find .alchemyrc in current directory first, then home directory
+	// Try to find .effect-gen.rc in current directory first, then home directory
 	const configPaths = [
-		path.join(process.cwd(), ".alchemyrc"),
-		path.join(os.homedir(), ".alchemyrc"),
+		path.join(process.cwd(), ".effect-gen.rc"),
+		path.join(os.homedir(), ".effect-gen.rc"),
 	];
 
 	for (const configPath of configPaths) {
@@ -36,7 +36,7 @@ const loadConfig = Effect.gen(function* () {
 					}),
 				),
 				Effect.flatMap((rawConfig) =>
-					Schema.decodeUnknown(AlchemyConfigSchema)(rawConfig),
+					Schema.decodeUnknown(EffectGenConfigSchema)(rawConfig),
 				),
 				Effect.either,
 			);
@@ -59,7 +59,7 @@ const inputOption = Options.file("input")
 	.pipe(Options.withAlias("i"))
 	.pipe(
 		Options.withDescription(
-			"Path to the OpenAPI specification file (JSON or YAML format). Supports OpenAPI 3.x specifications. Can be set in .alchemyrc config file.",
+			"Path to the OpenAPI specification file (JSON or YAML format). Supports OpenAPI 3.x specifications. Can be set in .effect-gen.rc config file.",
 		),
 	)
 	.pipe(Options.optional);
@@ -68,7 +68,7 @@ const outputOption = Options.directory("output")
 	.pipe(Options.withAlias("o"))
 	.pipe(
 		Options.withDescription(
-			"Output directory for generated Effect Platform HttpApi code. Directory will be created if it doesn't exist. Can be set in .alchemyrc config file.",
+			"Output directory for generated Effect Platform HttpApi code. Directory will be created if it doesn't exist. Can be set in .effect-gen.rc config file.",
 		),
 	)
 	.pipe(Options.optional);
@@ -77,7 +77,7 @@ const verboseOption = Options.boolean("verbose")
 	.pipe(Options.withAlias("v"))
 	.pipe(
 		Options.withDescription(
-			"Enable verbose logging output to see detailed processing information. Can be set in .alchemyrc config file.",
+			"Enable verbose logging output to see detailed processing information. Can be set in .effect-gen.rc config file.",
 		),
 	);
 
@@ -136,7 +136,7 @@ const generateHandler = ({
 	Effect.gen(function* () {
 		// Load configuration file
 		const configOption = yield* loadConfig;
-		const config = O.getOrElse(configOption, () => ({}) as AlchemyConfig);
+		const config = O.getOrElse(configOption, () => ({}) as EffectGenConfig);
 
 		// Apply configuration defaults and validate required options
 		const inputFromOption = O.getOrElse(input, () => undefined);
@@ -148,7 +148,7 @@ const generateHandler = ({
 		if (!finalInput) {
 			yield* Effect.fail(
 				new Error(
-					"Input file is required. Provide --input option or set 'input' in .alchemyrc",
+					"Input file is required. Provide --input option or set 'input' in .effect-gen.rc",
 				),
 			);
 		}
@@ -156,14 +156,14 @@ const generateHandler = ({
 		if (!finalOutput) {
 			yield* Effect.fail(
 				new Error(
-					"Output directory is required. Provide --output option or set 'output' in .alchemyrc",
+					"Output directory is required. Provide --output option or set 'output' in .effect-gen.rc",
 				),
 			);
 		}
 
 		if (finalVerbose) {
 			if (O.isSome(configOption)) {
-				yield* Console.log("✓ Configuration loaded from .alchemyrc");
+				yield* Console.log("✓ Configuration loaded from .effect-gen.rc");
 			}
 			yield* Console.log(`Processing OpenAPI spec: ${finalInput}`);
 			yield* Console.log(`Output directory: ${finalOutput}`);
@@ -181,7 +181,7 @@ const generateHandler = ({
 			yield* Console.log(`✓ Output directory validated: ${finalOutput}`);
 		}
 
-		yield* Console.log("🚀 Starting alchemy-gen generation...");
+		yield* Console.log("🚀 Starting effect-gen generation...");
 
 		// Parse the OpenAPI specification
 		const { quickParseOpenApiFile } = yield* Effect.promise(
@@ -253,7 +253,7 @@ const generateCommand = Command.make(
 
 // Create the CLI application
 const cli = Command.run(generateCommand, {
-	name: "alchemy-gen",
+	name: "effect-gen",
 	version: "0.1.0",
 });
 
