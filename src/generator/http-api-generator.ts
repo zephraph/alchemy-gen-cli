@@ -15,7 +15,7 @@ export class HttpApiGenerator {
 		private readonly options: GenerationOptions,
 	) {
 		this.schemaGenerator = new SchemaGenerator(apiData);
-		this.endpointGenerator = new EndpointGenerator(apiData);
+		this.endpointGenerator = new EndpointGenerator();
 	}
 
 	generate(): Effect.Effect<void, Error, never> {

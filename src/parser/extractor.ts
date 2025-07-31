@@ -227,7 +227,7 @@ const extractResponse = (
 	response: OpenApiResponse,
 ): ExtractedResponse => {
 	const result: ExtractedResponse = {
-		statusCode,
+		statusCode: Number.parseInt(statusCode, 10),
 		description: response.description,
 		content: response.content
 			? Object.entries(response.content).map(([mediaType, mediaTypeObj]) => {
@@ -283,8 +283,8 @@ const extractOperation = (
 	operation: OpenApiOperation,
 ): ExtractedOperation => {
 	const parameters = (operation.parameters || [])
-		.filter((param): param is OpenApiParameter => !("$ref" in param))
-		.map((param) => extractParameter(param));
+		.filter((param: any): param is OpenApiParameter => !("$ref" in param))
+		.map((param: OpenApiParameter) => extractParameter(param));
 
 	const responses = Object.entries(operation.responses)
 		.filter(
@@ -301,16 +301,15 @@ const extractOperation = (
 		parameters,
 		responses,
 		security: operation.security || [],
+		...(operation.operationId && { operationId: operation.operationId }),
+		...(operation.summary && { summary: operation.summary }),
+		...(operation.description && { description: operation.description }),
+		...(operation.deprecated && { deprecated: operation.deprecated }),
+		...(operation.requestBody &&
+			!("$ref" in operation.requestBody) && {
+				requestBody: extractRequestBody(operation.requestBody),
+			}),
 	};
-
-	if (operation.operationId) result.operationId = operation.operationId;
-	if (operation.summary) result.summary = operation.summary;
-	if (operation.description) result.description = operation.description;
-	if (operation.deprecated) result.deprecated = operation.deprecated;
-
-	if (operation.requestBody && !("$ref" in operation.requestBody)) {
-		result.requestBody = extractRequestBody(operation.requestBody);
-	}
 
 	return result;
 };
@@ -340,17 +339,16 @@ const extractPath = (pathStr: string, pathObj: OpenApiPath): ExtractedPath => {
 	});
 
 	const parameters = (pathObj.parameters || [])
-		.filter((param): param is OpenApiParameter => !("$ref" in param))
-		.map((param) => extractParameter(param));
+		.filter((param: any): param is OpenApiParameter => !("$ref" in param))
+		.map((param: OpenApiParameter) => extractParameter(param));
 
 	const result: ExtractedPath = {
 		path: pathStr,
 		operations,
 		parameters,
+		...(pathObj.summary && { summary: pathObj.summary }),
+		...(pathObj.description && { description: pathObj.description }),
 	};
-
-	if (pathObj.summary) result.summary = pathObj.summary;
-	if (pathObj.description) result.description = pathObj.description;
 
 	return result;
 };

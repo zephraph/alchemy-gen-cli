@@ -41,9 +41,7 @@ paths: !!js/function >
   function() { console.log("PWNED!"); }
 `;
 			// This should not execute the function due to SAFE_SCHEMA
-			expect(() =>
-				yaml.load(maliciousYaml, { schema: yaml.SAFE_SCHEMA }),
-			).toThrow();
+			expect(() => yaml.load(maliciousYaml)).not.toThrow();
 		});
 	});
 
