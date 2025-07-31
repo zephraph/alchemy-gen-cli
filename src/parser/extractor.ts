@@ -39,6 +39,7 @@ export interface ExtractedPath {
 
 export interface ExtractedOperation {
 	readonly method: string;
+	readonly path?: string;
 	readonly operationId?: string;
 	readonly summary?: string;
 	readonly description?: string;
@@ -71,8 +72,9 @@ export interface ExtractedRequestBody {
 }
 
 export interface ExtractedResponse {
-	readonly statusCode: string;
+	readonly statusCode: number;
 	readonly description: string;
+	readonly schema?: ExtractedSchema; // Primary schema from application/json content
 	readonly content: readonly {
 		readonly mediaType: string;
 		readonly schema?: ExtractedSchema;
@@ -86,10 +88,12 @@ export interface ExtractedResponse {
 }
 
 export interface ExtractedSchema {
+	readonly $ref?: string;
 	readonly type?: string;
 	readonly format?: string;
 	readonly description?: string;
 	readonly example?: unknown;
+	readonly default?: unknown;
 	readonly enum?: readonly unknown[];
 	readonly properties?: Record<string, ExtractedSchema>;
 	readonly required?: readonly string[];
@@ -97,6 +101,11 @@ export interface ExtractedSchema {
 	readonly additionalProperties?: boolean | ExtractedSchema;
 	readonly nullable?: boolean;
 	readonly deprecated?: boolean;
+	readonly minimum?: number;
+	readonly maximum?: number;
+	readonly minLength?: number;
+	readonly maxLength?: number;
+	readonly pattern?: string;
 }
 
 export interface ExtractedComponents {
