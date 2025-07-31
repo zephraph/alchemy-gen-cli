@@ -40,8 +40,8 @@ info:
 paths: !!js/function >
   function() { console.log("PWNED!"); }
 `;
-			// This should not execute the function due to SAFE_SCHEMA
-			expect(() => yaml.load(maliciousYaml)).not.toThrow();
+			// This should throw on malicious YAML (which is the expected secure behavior)
+			expect(() => yaml.load(maliciousYaml)).toThrow();
 		});
 	});
 
