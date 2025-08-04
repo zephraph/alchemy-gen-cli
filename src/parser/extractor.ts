@@ -39,6 +39,7 @@ export interface ExtractedPath {
 
 export interface ExtractedOperation {
 	readonly method: string;
+	readonly path?: string;
 	readonly operationId?: string;
 	readonly summary?: string;
 	readonly description?: string;
@@ -71,8 +72,9 @@ export interface ExtractedRequestBody {
 }
 
 export interface ExtractedResponse {
-	readonly statusCode: string;
+	readonly statusCode: number;
 	readonly description: string;
+	readonly schema?: ExtractedSchema; // Primary schema from application/json content
 	readonly content: readonly {
 		readonly mediaType: string;
 		readonly schema?: ExtractedSchema;
@@ -86,10 +88,12 @@ export interface ExtractedResponse {
 }
 
 export interface ExtractedSchema {
+	readonly $ref?: string;
 	readonly type?: string;
 	readonly format?: string;
 	readonly description?: string;
 	readonly example?: unknown;
+	readonly default?: unknown;
 	readonly enum?: readonly unknown[];
 	readonly properties?: Record<string, ExtractedSchema>;
 	readonly required?: readonly string[];
@@ -97,6 +101,11 @@ export interface ExtractedSchema {
 	readonly additionalProperties?: boolean | ExtractedSchema;
 	readonly nullable?: boolean;
 	readonly deprecated?: boolean;
+	readonly minimum?: number;
+	readonly maximum?: number;
+	readonly minLength?: number;
+	readonly maxLength?: number;
+	readonly pattern?: string;
 }
 
 export interface ExtractedComponents {
@@ -132,8 +141,10 @@ const extractSchema = (
 	}
 
 	const items =
-		"items" in schema && schema.items && !("$ref" in schema.items)
-			? extractSchema(schema.items)
+		"items" in schema && schema.items
+			? "$ref" in schema.items
+				? { $ref: schema.items.$ref } // Preserve the $ref
+				: extractSchema(schema.items)
 			: undefined;
 
 	const additionalProps =
@@ -218,7 +229,7 @@ const extractResponse = (
 	response: OpenApiResponse,
 ): ExtractedResponse => {
 	const result: ExtractedResponse = {
-		statusCode,
+		statusCode: Number.parseInt(statusCode, 10),
 		description: response.description,
 		content: response.content
 			? Object.entries(response.content).map(([mediaType, mediaTypeObj]) => {
@@ -274,8 +285,11 @@ const extractOperation = (
 	operation: OpenApiOperation,
 ): ExtractedOperation => {
 	const parameters = (operation.parameters || [])
-		.filter((param): param is OpenApiParameter => !("$ref" in param))
-		.map((param) => extractParameter(param));
+		.filter(
+			(param): param is OpenApiParameter =>
+				typeof param === "object" && param !== null && !("$ref" in param),
+		)
+		.map((param: OpenApiParameter) => extractParameter(param));
 
 	const responses = Object.entries(operation.responses)
 		.filter(
@@ -292,16 +306,15 @@ const extractOperation = (
 		parameters,
 		responses,
 		security: operation.security || [],
+		...(operation.operationId && { operationId: operation.operationId }),
+		...(operation.summary && { summary: operation.summary }),
+		...(operation.description && { description: operation.description }),
+		...(operation.deprecated && { deprecated: operation.deprecated }),
+		...(operation.requestBody &&
+			!("$ref" in operation.requestBody) && {
+				requestBody: extractRequestBody(operation.requestBody),
+			}),
 	};
-
-	if (operation.operationId) result.operationId = operation.operationId;
-	if (operation.summary) result.summary = operation.summary;
-	if (operation.description) result.description = operation.description;
-	if (operation.deprecated) result.deprecated = operation.deprecated;
-
-	if (operation.requestBody && !("$ref" in operation.requestBody)) {
-		result.requestBody = extractRequestBody(operation.requestBody);
-	}
 
 	return result;
 };
@@ -331,17 +344,19 @@ const extractPath = (pathStr: string, pathObj: OpenApiPath): ExtractedPath => {
 	});
 
 	const parameters = (pathObj.parameters || [])
-		.filter((param): param is OpenApiParameter => !("$ref" in param))
-		.map((param) => extractParameter(param));
+		.filter(
+			(param): param is OpenApiParameter =>
+				typeof param === "object" && param !== null && !("$ref" in param),
+		)
+		.map((param: OpenApiParameter) => extractParameter(param));
 
 	const result: ExtractedPath = {
 		path: pathStr,
 		operations,
 		parameters,
+		...(pathObj.summary && { summary: pathObj.summary }),
+		...(pathObj.description && { description: pathObj.description }),
 	};
-
-	if (pathObj.summary) result.summary = pathObj.summary;
-	if (pathObj.description) result.description = pathObj.description;
 
 	return result;
 };

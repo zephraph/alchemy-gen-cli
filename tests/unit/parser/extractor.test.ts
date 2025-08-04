@@ -176,9 +176,9 @@ describe("Data Extractor", () => {
 				);
 
 				expect(getOperation?.parameters).toHaveLength(1);
-				expect(getOperation?.parameters[0].name).toBe("id");
-				expect(getOperation?.parameters[0].in).toBe("path");
-				expect(getOperation?.parameters[0].required).toBe(true);
+				expect(getOperation?.parameters[0]?.name).toBe("id");
+				expect(getOperation?.parameters[0]?.in).toBe("path");
+				expect(getOperation?.parameters[0]?.required).toBe(true);
 			}
 		});
 
@@ -215,7 +215,7 @@ describe("Data Extractor", () => {
 
 				expect(getOperation?.responses).toBeDefined();
 				expect(
-					getOperation?.responses.find((r) => r.statusCode === "200"),
+					getOperation?.responses.find((r) => r.statusCode === 200),
 				).toBeDefined();
 			}
 		});

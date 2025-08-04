@@ -70,6 +70,7 @@ export const parseOpenApiFile = (
 		let validatedDocument: OpenApiDocument;
 		const validationErrors: string[] = [];
 
+		// Validation is disabled when skipValidation is true
 		if (!opts.skipValidation) {
 			const validationResult = yield* validateOpenApiDocumentStrict(
 				fileContent,

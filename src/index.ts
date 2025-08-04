@@ -225,13 +225,24 @@ const generateHandler = ({
 			);
 		}
 
-		// TODO: Implement the actual generation logic
-		yield* Console.log(
-			"⚠️  Code generation not yet implemented - OpenAPI parsing completed successfully",
+		// Generate the HttpApi code
+		yield* Console.log("🔧 Generating Effect HttpApi code...");
+
+		const { generateHttpApi } = yield* Effect.promise(
+			() => import("./generator/index.js"),
 		);
+
+		const outputDir = finalOutput || "./generated";
+		yield* generateHttpApi(extractedData, {
+			outputDir,
+			moduleName: extractedData.info.title.replace(/\s+/g, ""),
+			includeExamples: true,
+		});
+
 		yield* Console.log(
-			`📊 Parsed API: ${extractedData.info.title} v${extractedData.info.version}`,
+			`📊 Generated API: ${extractedData.info.title} v${extractedData.info.version}`,
 		);
+		yield* Console.log(`📁 Output directory: ${outputDir}`);
 
 		yield* Console.log("✅ Generation completed successfully!");
 	});

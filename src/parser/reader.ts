@@ -30,7 +30,7 @@ const parseJsonContent = (content: string, filePath: string) =>
 
 const parseYamlContent = (content: string, filePath: string) =>
 	Effect.try({
-		try: () => yaml.load(content, { schema: yaml.SAFE_SCHEMA }),
+		try: () => yaml.load(content),
 		catch: (error) =>
 			new Error(
 				`Failed to parse YAML file '${filePath}': ${error instanceof Error ? error.message : String(error)}`,
