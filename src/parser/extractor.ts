@@ -141,8 +141,10 @@ const extractSchema = (
 	}
 
 	const items =
-		"items" in schema && schema.items && !("$ref" in schema.items)
-			? extractSchema(schema.items)
+		"items" in schema && schema.items
+			? "$ref" in schema.items
+				? { $ref: schema.items.$ref } // Preserve the $ref
+				: extractSchema(schema.items)
 			: undefined;
 
 	const additionalProps =
@@ -283,7 +285,10 @@ const extractOperation = (
 	operation: OpenApiOperation,
 ): ExtractedOperation => {
 	const parameters = (operation.parameters || [])
-		.filter((param: any): param is OpenApiParameter => !("$ref" in param))
+		.filter(
+			(param): param is OpenApiParameter =>
+				typeof param === "object" && param !== null && !("$ref" in param),
+		)
 		.map((param: OpenApiParameter) => extractParameter(param));
 
 	const responses = Object.entries(operation.responses)
@@ -339,7 +344,10 @@ const extractPath = (pathStr: string, pathObj: OpenApiPath): ExtractedPath => {
 	});
 
 	const parameters = (pathObj.parameters || [])
-		.filter((param: any): param is OpenApiParameter => !("$ref" in param))
+		.filter(
+			(param): param is OpenApiParameter =>
+				typeof param === "object" && param !== null && !("$ref" in param),
+		)
 		.map((param: OpenApiParameter) => extractParameter(param));
 
 	const result: ExtractedPath = {

@@ -230,16 +230,26 @@ ${properties.join(",\n")}
 		return this.getSchemaReference(jsonContent.schema);
 	}
 
-	private getSchemaReference(schema: any): string {
-		if ("$ref" in schema) {
-			const refName = schema.$ref.split("/").pop()!;
-			return `S.${this.toPascalCase(refName)}`;
+	private getSchemaReference(schema: {
+		$ref?: string;
+		type?: string;
+		[key: string]: unknown;
+	}): string {
+		if ("$ref" in schema && schema.$ref) {
+			const parts = schema.$ref.split("/");
+			const refName = parts[parts.length - 1];
+			return `Schemas.${this.toPascalCase(refName)}`;
 		}
 
 		return this.getSchemaType(schema);
 	}
 
-	private getSchemaType(schema: any): string {
+	private getSchemaType(schema: {
+		type?: string;
+		format?: string;
+		items?: unknown;
+		[key: string]: unknown;
+	}): string {
 		switch (schema.type) {
 			case "string":
 				if (schema.format === "date-time") return "S.DateTimeString";

@@ -58,12 +58,13 @@ export class HttpApiGenerator {
 		return `${imports}\n\n${schemaCode}`;
 	}
 
-	private generateApiGroupFile(tag: string, operations: any[]): string {
+	private generateApiGroupFile(tag: string, operations: unknown[]): string {
 		const className = this.getApiGroupClassName(tag);
 
 		// Add imports
 		const imports = `import { HttpApiGroup, HttpApiEndpoint, HttpApiError, OpenApi } from "@effect/platform";
-import * as S from "./schemas.js";`;
+import { Schema as S } from "@effect/schema";
+import * as Schemas from "./schemas.js";`;
 
 		// Generate the API group class
 		const groupCode = this.endpointGenerator.generateApiGroup(
@@ -103,15 +104,16 @@ ${mainApiCode}`;
 	private generateMainApiClass(apiName: string, tags: string[]): string {
 		const groupInstances = tags
 			.map((tag) => `new ${this.getApiGroupClassName(tag)}()`)
-			.join(",\n    ");
+			.join(")\n  .add(");
 
-		return `export class ${apiName} extends HttpApi.empty.addGroup(
-  ${groupInstances}
-) {}`;
+		// Start with HttpApi.make() and chain .add() calls
+		const addCalls = groupInstances ? `.add(${groupInstances})` : "";
+
+		return `export const ${apiName} = HttpApi.make("${this.apiData.info.title}")${addCalls};`;
 	}
 
-	private groupOperationsByTag(): Map<string, any[]> {
-		const groups = new Map<string, any[]>();
+	private groupOperationsByTag(): Map<string, unknown[]> {
+		const groups = new Map<string, unknown[]>();
 
 		for (const pathItem of this.apiData.paths) {
 			for (const operation of pathItem.operations) {

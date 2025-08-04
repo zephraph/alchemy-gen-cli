@@ -64,9 +64,12 @@ ${structContent}
 	}
 
 	private generateArraySchema(name: string, schema: ExtractedSchema): string {
-		const itemType = this.getSchemaType(schema.items!);
-		const annotations = this.generateSchemaAnnotations(schema);
+		if (!schema.items) {
+			throw new Error(`Array schema ${name} is missing items property`);
+		}
+		const itemType = this.getSchemaType(schema.items);
 
+		const annotations = this.generateSchemaAnnotations(schema);
 		return `export const ${name} = S.Array(${itemType})${annotations};`;
 	}
 
@@ -91,8 +94,9 @@ ${structContent}
 
 	private getSchemaType(schema: ExtractedSchema): string {
 		// Handle references
-		if ("$ref" in schema) {
-			const refName = schema.$ref.split("/").pop()!;
+		if ("$ref" in schema && schema.$ref) {
+			const parts = schema.$ref.split("/");
+			const refName = parts[parts.length - 1];
 			return this.toPascalCase(refName);
 		}
 

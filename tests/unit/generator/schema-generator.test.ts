@@ -1,6 +1,9 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import { SchemaGenerator } from "../../../src/generator/schema-generator.js";
-import type { ExtractedApiData, ExtractedSchema } from "../../../src/parser/extractor.js";
+import type {
+	ExtractedApiData,
+	ExtractedSchema,
+} from "../../../src/parser/extractor.js";
 
 describe("SchemaGenerator", () => {
 	const mockApiData: ExtractedApiData = {
@@ -21,7 +24,7 @@ describe("SchemaGenerator", () => {
 		it("should generate empty output when no schemas exist", () => {
 			const generator = new SchemaGenerator(mockApiData);
 			const result = generator.generateAllSchemas();
-			
+
 			expect(result).toBe("");
 		});
 
@@ -109,7 +112,9 @@ describe("SchemaGenerator", () => {
 
 			const result = generator.generateSchema("UserStatus", schema);
 
-			expect(result).toContain('export const UserStatus = S.Literal("active", "inactive", "pending")');
+			expect(result).toContain(
+				'export const UserStatus = S.Literal("active", "inactive", "pending")',
+			);
 			expect(result).toContain('description: "User status"');
 		});
 
@@ -149,28 +154,40 @@ describe("SchemaGenerator", () => {
 		const generator = new SchemaGenerator(mockApiData);
 
 		it("should map string types correctly", () => {
-			expect(generator["getSchemaType"]({ type: "string" })).toBe("S.String");
-			expect(generator["getSchemaType"]({ type: "string", format: "email" })).toBe("S.Email");
-			expect(generator["getSchemaType"]({ type: "string", format: "date-time" })).toBe("S.DateTimeString");
-			expect(generator["getSchemaType"]({ type: "string", format: "date" })).toBe("S.DateString");
-			expect(generator["getSchemaType"]({ type: "string", format: "uuid" })).toBe("S.UUID");
+			expect(generator.getSchemaType({ type: "string" })).toBe("S.String");
+			expect(generator.getSchemaType({ type: "string", format: "email" })).toBe(
+				"S.Email",
+			);
+			expect(
+				generator.getSchemaType({ type: "string", format: "date-time" }),
+			).toBe("S.DateTimeString");
+			expect(generator.getSchemaType({ type: "string", format: "date" })).toBe(
+				"S.DateString",
+			);
+			expect(generator.getSchemaType({ type: "string", format: "uuid" })).toBe(
+				"S.UUID",
+			);
 		});
 
 		it("should map number types correctly", () => {
-			expect(generator["getSchemaType"]({ type: "number" })).toBe("S.Number");
-			expect(generator["getSchemaType"]({ type: "integer" })).toBe("S.Int");
+			expect(generator.getSchemaType({ type: "number" })).toBe("S.Number");
+			expect(generator.getSchemaType({ type: "integer" })).toBe("S.Int");
 		});
 
 		it("should map boolean type correctly", () => {
-			expect(generator["getSchemaType"]({ type: "boolean" })).toBe("S.Boolean");
+			expect(generator.getSchemaType({ type: "boolean" })).toBe("S.Boolean");
 		});
 
 		it("should handle array types", () => {
-			expect(generator["getSchemaType"]({ type: "array", items: { type: "string" } })).toBe("S.Array(S.String)");
+			expect(
+				generator.getSchemaType({ type: "array", items: { type: "string" } }),
+			).toBe("S.Array(S.String)");
 		});
 
 		it("should handle reference types", () => {
-			expect(generator["getSchemaType"]({ $ref: "#/components/schemas/User" })).toBe("User");
+			expect(
+				generator.getSchemaType({ $ref: "#/components/schemas/User" }),
+			).toBe("User");
 		});
 	});
 
@@ -178,12 +195,12 @@ describe("SchemaGenerator", () => {
 		const generator = new SchemaGenerator(mockApiData);
 
 		it("should convert strings to PascalCase", () => {
-			expect(generator["toPascalCase"]("user")).toBe("User");
-			expect(generator["toPascalCase"]("user-profile")).toBe("UserProfile");
-			expect(generator["toPascalCase"]("user_settings")).toBe("UserSettings");
-			expect(generator["toPascalCase"]("createUser")).toBe("CreateUser");
-			expect(generator["toPascalCase"]("CreateUser")).toBe("CreateUser");
-			expect(generator["toPascalCase"]("API_KEY")).toBe("APIKEY");
+			expect(generator.toPascalCase("user")).toBe("User");
+			expect(generator.toPascalCase("user-profile")).toBe("UserProfile");
+			expect(generator.toPascalCase("user_settings")).toBe("UserSettings");
+			expect(generator.toPascalCase("createUser")).toBe("CreateUser");
+			expect(generator.toPascalCase("CreateUser")).toBe("CreateUser");
+			expect(generator.toPascalCase("API_KEY")).toBe("APIKEY");
 		});
 	});
 
@@ -203,7 +220,7 @@ describe("SchemaGenerator", () => {
 				pattern: "^test.*",
 			};
 
-			const result = generator["generateAnnotations"](schema);
+			const result = generator.generateAnnotations(schema);
 
 			expect(result).toContain('description: "Test field"');
 			expect(result).toContain('examples: ["example value"]');
@@ -217,7 +234,7 @@ describe("SchemaGenerator", () => {
 
 		it("should return empty string when no annotations exist", () => {
 			const schema: ExtractedSchema = { type: "string" };
-			const result = generator["generateAnnotations"](schema);
+			const result = generator.generateAnnotations(schema);
 			expect(result).toBe("");
 		});
 	});

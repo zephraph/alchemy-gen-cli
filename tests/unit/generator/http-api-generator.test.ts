@@ -1,15 +1,20 @@
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { Effect } from "effect";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import { Effect } from "effect";
 import { HttpApiGenerator } from "../../../src/generator/http-api-generator.js";
-import type { ExtractedApiData, GenerationOptions } from "../../../src/generator/index.js";
+import type { GenerationOptions } from "../../../src/generator/index.js";
+import type { ExtractedApiData } from "../../../src/parser/extractor.js";
 
 describe("HttpApiGenerator", () => {
 	const testOutputDir = path.join(process.cwd(), "test-output-generator");
-	
+
 	const mockApiData: ExtractedApiData = {
-		info: { title: "Test API", version: "1.0.0", description: "Test API description" },
+		info: {
+			title: "Test API",
+			version: "1.0.0",
+			description: "Test API description",
+		},
 		servers: [],
 		paths: [
 			{
@@ -93,7 +98,11 @@ describe("HttpApiGenerator", () => {
 					properties: {
 						id: { type: "string", description: "User ID" },
 						name: { type: "string", description: "User name" },
-						email: { type: "string", format: "email", description: "User email" },
+						email: {
+							type: "string",
+							format: "email",
+							description: "User email",
+						},
 					},
 					required: ["id", "name"],
 				},
@@ -101,7 +110,11 @@ describe("HttpApiGenerator", () => {
 					type: "object",
 					properties: {
 						name: { type: "string", description: "User name" },
-						email: { type: "string", format: "email", description: "User email" },
+						email: {
+							type: "string",
+							format: "email",
+							description: "User email",
+						},
 					},
 					required: ["name"],
 				},
@@ -144,7 +157,7 @@ describe("HttpApiGenerator", () => {
 	describe("generate", () => {
 		it("should generate all required files", async () => {
 			const generator = new HttpApiGenerator(mockApiData, options);
-			
+
 			await Effect.runPromise(generator.generate());
 
 			// Check that all expected files are created
@@ -157,15 +170,17 @@ describe("HttpApiGenerator", () => {
 
 		it("should generate schemas file with correct content", async () => {
 			const generator = new HttpApiGenerator(mockApiData, options);
-			
+
 			await Effect.runPromise(generator.generate());
 
 			const schemasContent = await fs.readFile(
 				path.join(testOutputDir, "schemas.ts"),
-				"utf8"
+				"utf8",
 			);
 
-			expect(schemasContent).toContain('import { Schema as S } from "@effect/schema";');
+			expect(schemasContent).toContain(
+				'import { Schema as S } from "@effect/schema";',
+			);
 			expect(schemasContent).toContain("export const User = S.Struct({");
 			expect(schemasContent).toContain("export const CreateUser = S.Struct({");
 			expect(schemasContent).toContain("id: S.String");
@@ -175,36 +190,52 @@ describe("HttpApiGenerator", () => {
 
 		it("should generate API group files with correct content", async () => {
 			const generator = new HttpApiGenerator(mockApiData, options);
-			
+
 			await Effect.runPromise(generator.generate());
 
 			const usersApiContent = await fs.readFile(
 				path.join(testOutputDir, "users-api.ts"),
-				"utf8"
+				"utf8",
 			);
 
-			expect(usersApiContent).toContain('import { HttpApiGroup, HttpApiEndpoint, HttpApiError, OpenApi } from "@effect/platform";');
+			expect(usersApiContent).toContain(
+				'import { HttpApiGroup, HttpApiEndpoint, HttpApiError, OpenApi } from "@effect/platform";',
+			);
 			expect(usersApiContent).toContain('import * as S from "./schemas.js";');
-			expect(usersApiContent).toContain("export class UsersApi extends HttpApiGroup.make('users')");
-			expect(usersApiContent).toContain("HttpApiEndpoint.get('getUsers', '/users')");
-			expect(usersApiContent).toContain("HttpApiEndpoint.post('createUser', '/users')");
+			expect(usersApiContent).toContain(
+				"export class UsersApi extends HttpApiGroup.make('users')",
+			);
+			expect(usersApiContent).toContain(
+				"HttpApiEndpoint.get('getUsers', '/users')",
+			);
+			expect(usersApiContent).toContain(
+				"HttpApiEndpoint.post('createUser', '/users')",
+			);
 		});
 
 		it("should generate index file with correct content", async () => {
 			const generator = new HttpApiGenerator(mockApiData, options);
-			
+
 			await Effect.runPromise(generator.generate());
 
 			const indexContent = await fs.readFile(
 				path.join(testOutputDir, "index.ts"),
-				"utf8"
+				"utf8",
 			);
 
-			expect(indexContent).toContain('import { HttpApi } from "@effect/platform";');
-			expect(indexContent).toContain('import { UsersApi } from "./users-api.js";');
-			expect(indexContent).toContain('import { ProductsApi } from "./products-api.js";');
+			expect(indexContent).toContain(
+				'import { HttpApi } from "@effect/platform";',
+			);
+			expect(indexContent).toContain(
+				'import { UsersApi } from "./users-api.js";',
+			);
+			expect(indexContent).toContain(
+				'import { ProductsApi } from "./products-api.js";',
+			);
 			expect(indexContent).toContain('export * from "./schemas.js";');
-			expect(indexContent).toContain("export class TestAPIApi extends HttpApi.empty.addGroup(");
+			expect(indexContent).toContain(
+				"export class TestAPIApi extends HttpApi.empty.addGroup(",
+			);
 			expect(indexContent).toContain("new UsersApi()");
 			expect(indexContent).toContain("new ProductsApi()");
 		});
@@ -225,7 +256,7 @@ describe("HttpApiGenerator", () => {
 			};
 
 			const generator = new HttpApiGenerator(emptyApiData, options);
-			
+
 			await Effect.runPromise(generator.generate());
 
 			// Should still create basic files
@@ -242,7 +273,7 @@ describe("HttpApiGenerator", () => {
 			};
 
 			const generator = new HttpApiGenerator(mockApiData, deepOptions);
-			
+
 			await Effect.runPromise(generator.generate());
 
 			// Check that the deep directory structure was created
@@ -255,7 +286,7 @@ describe("HttpApiGenerator", () => {
 	describe("groupOperationsByTag", () => {
 		it("should group operations by their first tag", () => {
 			const generator = new HttpApiGenerator(mockApiData, options);
-			const groups = generator["groupOperationsByTag"]();
+			const groups = generator.groupOperationsByTag();
 
 			expect(groups.has("users")).toBe(true);
 			expect(groups.has("products")).toBe(true);
@@ -287,7 +318,7 @@ describe("HttpApiGenerator", () => {
 			};
 
 			const generator = new HttpApiGenerator(apiDataWithoutTags, options);
-			const groups = generator["groupOperationsByTag"]();
+			const groups = generator.groupOperationsByTag();
 
 			expect(groups.has("default")).toBe(true);
 			expect(groups.get("default")).toHaveLength(1);
@@ -298,31 +329,35 @@ describe("HttpApiGenerator", () => {
 		const generator = new HttpApiGenerator(mockApiData, options);
 
 		it("should generate correct API group class names", () => {
-			expect(generator["getApiGroupClassName"]("users")).toBe("UsersApi");
-			expect(generator["getApiGroupClassName"]("user-profile")).toBe("UserProfileApi");
-			expect(generator["getApiGroupClassName"]("API_KEYS")).toBe("APIKEYSApi");
+			expect(generator.getApiGroupClassName("users")).toBe("UsersApi");
+			expect(generator.getApiGroupClassName("user-profile")).toBe(
+				"UserProfileApi",
+			);
+			expect(generator.getApiGroupClassName("API_KEYS")).toBe("APIKEYSApi");
 		});
 
 		it("should generate correct API group file names", () => {
-			expect(generator["getApiGroupFileName"]("users")).toBe("users-api.ts");
-			expect(generator["getApiGroupFileName"]("UserProfile")).toBe("user-profile-api.ts");
-			expect(generator["getApiGroupFileName"]("API_KEYS")).toBe("api-keys-api.ts");
+			expect(generator.getApiGroupFileName("users")).toBe("users-api.ts");
+			expect(generator.getApiGroupFileName("UserProfile")).toBe(
+				"user-profile-api.ts",
+			);
+			expect(generator.getApiGroupFileName("API_KEYS")).toBe("api-keys-api.ts");
 		});
 
 		it("should generate correct main API name", () => {
-			expect(generator["getMainApiName"]()).toBe("TestAPIApi");
+			expect(generator.getMainApiName()).toBe("TestAPIApi");
 		});
 
 		it("should convert strings to PascalCase", () => {
-			expect(generator["toPascalCase"]("test api")).toBe("TestApi");
-			expect(generator["toPascalCase"]("user-profile")).toBe("UserProfile");
-			expect(generator["toPascalCase"]("createUser")).toBe("CreateUser");
+			expect(generator.toPascalCase("test api")).toBe("TestApi");
+			expect(generator.toPascalCase("user-profile")).toBe("UserProfile");
+			expect(generator.toPascalCase("createUser")).toBe("CreateUser");
 		});
 
 		it("should convert strings to kebab-case", () => {
-			expect(generator["toKebabCase"]("TestAPI")).toBe("test-api");
-			expect(generator["toKebabCase"]("UserProfile")).toBe("user-profile");
-			expect(generator["toKebabCase"]("API_KEYS")).toBe("api-keys");
+			expect(generator.toKebabCase("TestAPI")).toBe("test-api");
+			expect(generator.toKebabCase("UserProfile")).toBe("user-profile");
+			expect(generator.toKebabCase("API_KEYS")).toBe("api-keys");
 		});
 	});
 });

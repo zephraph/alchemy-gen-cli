@@ -1,10 +1,9 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import { EndpointGenerator } from "../../../src/generator/endpoint-generator.js";
 import type {
 	ExtractedOperation,
 	ExtractedParameter,
 	ExtractedResponse,
-	ExtractedRequestBody,
 } from "../../../src/parser/extractor.js";
 
 describe("EndpointGenerator", () => {
@@ -14,7 +13,9 @@ describe("EndpointGenerator", () => {
 		it("should generate an empty API group", () => {
 			const result = generator.generateApiGroup("users", "UsersApi", []);
 
-			expect(result).toContain("export class UsersApi extends HttpApiGroup.make('users')");
+			expect(result).toContain(
+				"export class UsersApi extends HttpApiGroup.make('users')",
+			);
 			expect(result).toContain(".add(");
 			expect(result).toContain(") {}");
 		});
@@ -40,11 +41,19 @@ describe("EndpointGenerator", () => {
 				},
 			];
 
-			const result = generator.generateApiGroup("users", "UsersApi", operations);
+			const result = generator.generateApiGroup(
+				"users",
+				"UsersApi",
+				operations,
+			);
 
-			expect(result).toContain("export class UsersApi extends HttpApiGroup.make('users')");
+			expect(result).toContain(
+				"export class UsersApi extends HttpApiGroup.make('users')",
+			);
 			expect(result).toContain("HttpApiEndpoint.get('getUsers', '/users')");
-			expect(result).toContain('OpenApi.annotations({\n        title: "Get all users"');
+			expect(result).toContain(
+				'OpenApi.annotations({\n        title: "Get all users"',
+			);
 		});
 	});
 
@@ -153,7 +162,9 @@ describe("EndpointGenerator", () => {
 
 			const result = generator.generateEndpoint(operation);
 
-			expect(result).toContain("HttpApiEndpoint.get('getUserById', '/users/{id}')");
+			expect(result).toContain(
+				"HttpApiEndpoint.get('getUserById', '/users/{id}')",
+			);
 			expect(result).toContain(".setPath(S.Struct({");
 			expect(result).toContain("id: S.String.annotations({");
 			expect(result).toContain('description: "User ID"');
@@ -233,23 +244,23 @@ describe("EndpointGenerator", () => {
 
 			expect(result).toContain("HttpApiEndpoint.get('getUsers', '/users')");
 			expect(result).toContain(".setHeaders(S.Struct({");
-			expect(result).toContain('X-API-Key: S.String');
+			expect(result).toContain("X-API-Key: S.String");
 		});
 	});
 
 	describe("getHttpMethod", () => {
 		it("should map HTTP methods correctly", () => {
-			expect(generator["getHttpMethod"]("GET")).toBe("get");
-			expect(generator["getHttpMethod"]("POST")).toBe("post");
-			expect(generator["getHttpMethod"]("PUT")).toBe("put");
-			expect(generator["getHttpMethod"]("PATCH")).toBe("patch");
-			expect(generator["getHttpMethod"]("DELETE")).toBe("del");
-			expect(generator["getHttpMethod"]("HEAD")).toBe("head");
-			expect(generator["getHttpMethod"]("OPTIONS")).toBe("options");
+			expect(generator.getHttpMethod("GET")).toBe("get");
+			expect(generator.getHttpMethod("POST")).toBe("post");
+			expect(generator.getHttpMethod("PUT")).toBe("put");
+			expect(generator.getHttpMethod("PATCH")).toBe("patch");
+			expect(generator.getHttpMethod("DELETE")).toBe("del");
+			expect(generator.getHttpMethod("HEAD")).toBe("head");
+			expect(generator.getHttpMethod("OPTIONS")).toBe("options");
 		});
 
 		it("should default to 'get' for unknown methods", () => {
-			expect(generator["getHttpMethod"]("UNKNOWN")).toBe("get");
+			expect(generator.getHttpMethod("UNKNOWN")).toBe("get");
 		});
 	});
 
@@ -265,7 +276,7 @@ describe("EndpointGenerator", () => {
 				security: [],
 			};
 
-			expect(generator["getEndpointName"](operation)).toBe("getAllUsers");
+			expect(generator.getEndpointName(operation)).toBe("getAllUsers");
 		});
 
 		it("should generate name from method and path when operationId is missing", () => {
@@ -278,7 +289,7 @@ describe("EndpointGenerator", () => {
 				security: [],
 			};
 
-			expect(generator["getEndpointName"](operation)).toBe("getUsersProfile");
+			expect(generator.getEndpointName(operation)).toBe("getUsersProfile");
 		});
 
 		it("should handle path parameters in name generation", () => {
@@ -291,7 +302,7 @@ describe("EndpointGenerator", () => {
 				security: [],
 			};
 
-			expect(generator["getEndpointName"](operation)).toBe("getUsersPosts");
+			expect(generator.getEndpointName(operation)).toBe("getUsersPosts");
 		});
 	});
 
@@ -313,7 +324,7 @@ describe("EndpointGenerator", () => {
 				},
 			];
 
-			const result = generator["getSuccessResponse"](responses);
+			const result = generator.getSuccessResponse(responses);
 			expect(result).toBe("S.User");
 		});
 
@@ -328,7 +339,7 @@ describe("EndpointGenerator", () => {
 				},
 			];
 
-			const result = generator["getSuccessResponse"](responses);
+			const result = generator.getSuccessResponse(responses);
 			expect(result).toBe("S.String");
 		});
 
@@ -342,7 +353,7 @@ describe("EndpointGenerator", () => {
 				},
 			];
 
-			const result = generator["getSuccessResponse"](responses);
+			const result = generator.getSuccessResponse(responses);
 			expect(result).toBeNull();
 		});
 	});
@@ -371,7 +382,7 @@ describe("EndpointGenerator", () => {
 				},
 			];
 
-			const result = generator["getErrorResponses"](responses);
+			const result = generator.getErrorResponses(responses);
 			expect(result).toHaveLength(2);
 			expect(result[0]).toContain("HttpApiError.make('400'");
 			expect(result[1]).toContain("HttpApiError.make('404'");
@@ -401,7 +412,7 @@ describe("EndpointGenerator", () => {
 				},
 			];
 
-			const result = generator["categorizeParameters"](parameters);
+			const result = generator.categorizeParameters(parameters);
 
 			expect(result.pathParams).toHaveLength(1);
 			expect(result.pathParams[0]?.name).toBe("id");
@@ -414,18 +425,18 @@ describe("EndpointGenerator", () => {
 
 	describe("toPascalCase", () => {
 		it("should convert strings to PascalCase", () => {
-			expect(generator["toPascalCase"]("user")).toBe("User");
-			expect(generator["toPascalCase"]("user-profile")).toBe("UserProfile");
-			expect(generator["toPascalCase"]("createUser")).toBe("CreateUser");
-			expect(generator["toPascalCase"]("CreateUser")).toBe("CreateUser");
+			expect(generator.toPascalCase("user")).toBe("User");
+			expect(generator.toPascalCase("user-profile")).toBe("UserProfile");
+			expect(generator.toPascalCase("createUser")).toBe("CreateUser");
+			expect(generator.toPascalCase("CreateUser")).toBe("CreateUser");
 		});
 	});
 
 	describe("toKebabCase", () => {
 		it("should convert strings to kebab-case", () => {
-			expect(generator["toKebabCase"]("User")).toBe("user");
-			expect(generator["toKebabCase"]("UserProfile")).toBe("user-profile");
-			expect(generator["toKebabCase"]("APIKey")).toBe("apikey");
+			expect(generator.toKebabCase("User")).toBe("user");
+			expect(generator.toKebabCase("UserProfile")).toBe("user-profile");
+			expect(generator.toKebabCase("APIKey")).toBe("apikey");
 		});
 	});
 });
