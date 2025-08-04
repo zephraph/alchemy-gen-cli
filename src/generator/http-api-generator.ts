@@ -1,7 +1,10 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { Effect } from "effect";
-import type { ExtractedApiData } from "../parser/extractor.js";
+import type {
+	ExtractedApiData,
+	ExtractedOperation,
+} from "../parser/extractor.js";
 import { EndpointGenerator } from "./endpoint-generator.js";
 import type { GenerationOptions } from "./index.js";
 import { SchemaGenerator } from "./schema-generator.js";
@@ -58,7 +61,10 @@ export class HttpApiGenerator {
 		return `${imports}\n\n${schemaCode}`;
 	}
 
-	private generateApiGroupFile(tag: string, operations: unknown[]): string {
+	private generateApiGroupFile(
+		tag: string,
+		operations: ExtractedOperation[],
+	): string {
 		const className = this.getApiGroupClassName(tag);
 
 		// Add imports
@@ -112,8 +118,8 @@ ${mainApiCode}`;
 		return `export const ${apiName} = HttpApi.make("${this.apiData.info.title}")${addCalls};`;
 	}
 
-	private groupOperationsByTag(): Map<string, unknown[]> {
-		const groups = new Map<string, unknown[]>();
+	private groupOperationsByTag(): Map<string, ExtractedOperation[]> {
+		const groups = new Map<string, ExtractedOperation[]>();
 
 		for (const pathItem of this.apiData.paths) {
 			for (const operation of pathItem.operations) {
