@@ -103,6 +103,7 @@ export interface ExtractedSchema {
 	readonly deprecated?: boolean;
 	readonly minimum?: number;
 	readonly maximum?: number;
+	readonly [key: string]: unknown;
 	readonly minLength?: number;
 	readonly maxLength?: number;
 	readonly pattern?: string;
@@ -286,7 +287,7 @@ const extractOperation = (
 ): ExtractedOperation => {
 	const parameters = (operation.parameters || [])
 		.filter(
-			(param): param is OpenApiParameter =>
+			(param: any): param is OpenApiParameter =>
 				typeof param === "object" && param !== null && !("$ref" in param),
 		)
 		.map((param: OpenApiParameter) => extractParameter(param));
@@ -345,7 +346,7 @@ const extractPath = (pathStr: string, pathObj: OpenApiPath): ExtractedPath => {
 
 	const parameters = (pathObj.parameters || [])
 		.filter(
-			(param): param is OpenApiParameter =>
+			(param: any): param is OpenApiParameter =>
 				typeof param === "object" && param !== null && !("$ref" in param),
 		)
 		.map((param: OpenApiParameter) => extractParameter(param));

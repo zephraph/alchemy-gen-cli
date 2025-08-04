@@ -97,6 +97,9 @@ ${structContent}
 		if ("$ref" in schema && schema.$ref) {
 			const parts = schema.$ref.split("/");
 			const refName = parts[parts.length - 1];
+			if (!refName) {
+				throw new Error(`Invalid $ref format: ${schema.$ref}`);
+			}
 			return this.toPascalCase(refName);
 		}
 
